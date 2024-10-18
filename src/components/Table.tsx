@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { getData } from "../API/api";
-import TableHead from "./TableHead";
+import { getData } from "../model/api";
+import { formatDate } from "../model/FormatDate";
+
+import TableBody from "./TableBody";
+import Loader from "../components/Loader.tsx";
 
 interface apiProps {
   amount: number;
@@ -10,66 +13,58 @@ interface apiProps {
   id: number;
 }
 
-const Table: React.FC<{}> = () => {
-  const [apiData, setApiData] = useState<apiProps[]>();
+const Table: React.FC = () => {
+  const [apiData, setApiData] = useState<apiProps[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
   useEffect(() => {
-    getData().then((data) => setApiData(data));
+    getData()
+      .then((data) => {
+        setApiData(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching data: ", error);
+        setLoading(false);
+      });
   }, []);
-  // const { amount, category, date, merchant, id } = apiData;
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  const labels = Object.keys(apiData[0]);
+
   return (
     <div className="w-full">
       <table className="w-full">
         <thead>
           <tr>
-            <TableHead>ID</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Merchant</TableHead>
-            <TableHead>Category</TableHead>
+            {labels.map((label, indx) => (
+              <TableBody type="th" key={label}>
+                {indx === 0
+                  ? label.toUpperCase()
+                  : label.charAt(0).toUpperCase() + label.slice(1)}
+              </TableBody>
+            ))}
           </tr>
         </thead>
+        <tbody>
+          {apiData.map((data, indx) => (
+            <tr key={indx}>
+              <TableBody type="td">{data.id}</TableBody>
+              <TableBody type="td">{formatDate(data.date)}</TableBody>
+              <TableBody type="td">£{data.amount}</TableBody>
+              <TableBody type="td">{data.merchant}</TableBody>
+              <TableBody type="td">
+                {data.category.charAt(0).toUpperCase() + data.category.slice(1)}
+              </TableBody>
+            </tr>
+          ))}
+        </tbody>
       </table>
     </div>
   );
 };
 
 export default Table;
-
-// import React, { useEffect, useState } from 'react';
-// import { getData } from '../API/api';
-
-// interface Data {
-//   id: number;
-//   name: string;
-//   age: number; // Define the properties based on your actual data structure
-// }
-
-// const TableHead: React.FC = () => {
-//   const [data, setData] = useState<Data[]>([]); // State to store fetched data
-
-//   useEffect(() => {
-//     // Directly call getData and set the state with the returned data
-//     getData().then((result) => {
-//       setData(result); // Set the fetched data to the state
-//     });
-//   }, []); // Empty dependency array to call this effect only once on mount
-
-//   return (
-//     <thead>
-//       <tr>
-//         <th>ID</th>
-//         <th>Name</th>
-//         <th>Age</th>
-//       </tr>
-//       {data.map((item) => (
-//         <tr key={item.id}>
-//           <td>{item.id}</td>
-//           <td>{item.name}</td>
-//           <td>{item.age}</td>
-//         </tr>
-//       ))}
-//     </thead>
-//   );
-// };
-
-// export default TableHead;
